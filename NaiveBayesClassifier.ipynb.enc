@@ -1,0 +1,160 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 190,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import csv\n",
+    "import math\n",
+    "\n",
+    "def open_file():\n",
+    "    with open(\"PlayTennis.csv\", \"r\") as f:\n",
+    "        dataset = csv.reader(f)\n",
+    "        d = []\n",
+    "        for item in dataset:\n",
+    "            d.append(item)\n",
+    "        return d"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 191,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def Classify_headings():\n",
+    "    dataset = open_file()\n",
+    "    vals_dict = dict()\n",
+    "    for item in dataset[0]:\n",
+    "        vals_dict[item.strip()] = dict()\n",
+    "\n",
+    "    headings = list(vals_dict.keys())\n",
+    "    index = 0\n",
+    "    for item in dataset[1:]:\n",
+    "        index = 0\n",
+    "        for i in item:\n",
+    "            if(i not in vals_dict[headings[index]]):\n",
+    "                if(headings[index].strip() == 'PlayTennis'):\n",
+    "                    vals_dict[headings[index]][i] = {'p_yes/no':0}\n",
+    "                else:\n",
+    "                    vals_dict[headings[index]][i] = {'Yes':0, 'No':0, 'p_yes':0, 'p_no':0}\n",
+    "\n",
+    "            index += 1\n",
+    "\n",
+    "    return vals_dict"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 192,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def assign_values():\n",
+    "    vals_dict = Classify_headings()\n",
+    "    headings = list(vals_dict.keys())\n",
+    "    index = 0\n",
+    "    for item in dataset[1:]:\n",
+    "        if(item[-1]=='Yes'):\n",
+    "            index = 0\n",
+    "            for i in item[:-1]:\n",
+    "                vals_dict[headings[index]][i]['Yes'] += 1\n",
+    "                index+=1\n",
+    "            vals_dict[headings[-1]]['Yes']['p_yes/no'] += 1\n",
+    "        elif(item[-1]=='No'):\n",
+    "            index = 0\n",
+    "            for i in item[:-1]:\n",
+    "                vals_dict[headings[index]][i]['No'] += 1\n",
+    "                index+=1\n",
+    "            vals_dict[headings[-1]]['No']['p_yes/no'] += 1\n",
+    "            \n",
+    "    return vals_dict"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 193,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def calculate_probabilities(vals_dict):\n",
+    "    no_of_yes = vals_dict[headings[-1]]['Yes']['p_yes/no']\n",
+    "    no_of_nos = vals_dict[headings[-1]]['No']['p_yes/no']\n",
+    "\n",
+    "    for item in vals_dict:\n",
+    "        if(item!='PlayTennis'):\n",
+    "            for i in vals_dict[item]:\n",
+    "                vals_dict[item][i]['p_yes'] = vals_dict[item][i]['Yes']/no_of_yes\n",
+    "                vals_dict[item][i]['p_no'] = vals_dict[item][i]['No']/no_of_nos\n",
+    "\n",
+    "    vals_dict['PlayTennis']['No']['p_yes/no'] = vals_dict['PlayTennis']['No']['p_yes/no']/(no_of_nos+no_of_yes)\n",
+    "    vals_dict['PlayTennis']['Yes']['p_yes/no'] = vals_dict['PlayTennis']['Yes']['p_yes/no']/(no_of_yes+no_of_nos)\n",
+    "    return vals_dict"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 194,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def bayes_classification(vals_dict, test = {'Outlook':'Sunny', 'Temperature':'Cool', 'Humidity':'High', 'Windy':'Strong'}):\n",
+    "    p_yes = vals_dict['PlayTennis']['Yes']['p_yes/no']\n",
+    "    p_no = vals_dict['PlayTennis']['No']['p_yes/no']\n",
+    "    for item in test:\n",
+    "        p_yes *= vals_dict[item][test[item]]['p_yes']\n",
+    "        p_no *= vals_dict[item][test[item]]['p_no']\n",
+    "    \n",
+    "    return(p_yes/(p_yes+p_no), p_no/(p_yes+p_no))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 195,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.20458265139116202 0.795417348608838\n"
+     ]
+    }
+   ],
+   "source": [
+    "yes, no = bayes_classification(calculate_probabilities(assign_values()))\n",
+    "print(yes, no)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
